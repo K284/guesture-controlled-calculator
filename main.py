@@ -33,34 +33,33 @@ class Button:
         return bx < x < bx + bw and by < y < by + bh
 
 
-# Main calculator grid (4x4)
+# Main 4x4 grid with = inside
 main_button_list = [
     ['7', '8', '9', '/'],
     ['4', '5', '6', '*'],
     ['1', '2', '3', '-'],
-    ['0', '.', '%', '+']
+    ['0', '.', '=', '+']
 ]
 
-# Extra vertical buttons
+# Side buttons
 extra_buttons = [
     Button([500 + 50, 150 + 0*100], 'C'),
-    Button([500 + 50, 150 + 1*100], 'sqrt', [100, 85], font_scale=1.8),
-    Button([500 + 50, 150 + 2*100], '=')
+    Button([500 + 50, 150 + 1*100], 'sqrt', [100, 85], font_scale=1.8)
 ]
 
-# Generate main grid buttons
+# Generate grid buttons
 buttons = []
 for i in range(len(main_button_list)):
     for j in range(len(main_button_list[i])):
         btn = Button([100*j + 50, 100*i + 150], main_button_list[i][j])
         buttons.append(btn)
 
-buttons += extra_buttons  # Add the side buttons
+buttons += extra_buttons
 
 expression = ''
 result = ''
 
-# Hover tracking
+# Hover logic
 hover_start_time = 0
 current_hover_button = None
 hover_duration_required = 1.8  # seconds
@@ -129,7 +128,7 @@ while True:
         current_hover_button = None
         hover_start_time = 0
 
-    # Expression Display Area
+    # Expression Display
     cv2.rectangle(img, (50, 50), (750, 130), (255, 255, 255), cv2.FILLED)
     cv2.rectangle(img, (50, 50), (750, 130), (50, 50, 50), 3)
 
