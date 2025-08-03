@@ -9,43 +9,58 @@ mp_draw = mp.solutions.drawing_utils
 hands = mp_hands.Hands(max_num_hands=1)
 
 class Button:
-    def __init__(self, pos, text, size=[85, 85]):
+    def __init__(self, pos, text, size=[85, 85], font_scale=2.5):
         self.pos = pos
         self.size = size
         self.text = text
+        self.font_scale = font_scale
 
     def draw(self, img):
         x, y = self.pos
         w, h = self.size
-        cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), cv2.FILLED)
-        cv2.rectangle(img, (x, y), (x+w, y+h), (50, 50, 50), 3)
-        cv2.putText(img, self.text, (x+20, y+60),
-                    cv2.FONT_HERSHEY_PLAIN, 2.5, (0, 0, 0), 3)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), cv2.FILLED)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (50, 50, 50), 3)
+
+        text_x = x + 10
+        text_y = y + int(h * 0.7)
+
+        cv2.putText(img, self.text, (text_x, text_y),
+                    cv2.FONT_HERSHEY_PLAIN, self.font_scale, (0, 0, 0), 3)
 
     def check_inside(self, x, y):
         bx, by = self.pos
         bw, bh = self.size
         return bx < x < bx + bw and by < y < by + bh
 
-# Create buttons
-button_list = [
+
+# Main calculator grid (4x4)
+main_button_list = [
     ['7', '8', '9', '/'],
     ['4', '5', '6', '*'],
     ['1', '2', '3', '-'],
-    ['0', '.', '%', '+'],
-    ['C', 'sqrt', '=', '']
+    ['0', '.', '%', '+']
 ]
 
+# Extra vertical buttons
+extra_buttons = [
+    Button([500 + 50, 150 + 0*100], 'C'),
+    Button([500 + 50, 150 + 1*100], 'sqrt', [100, 85], font_scale=1.8),
+    Button([500 + 50, 150 + 2*100], '=')
+]
+
+# Generate main grid buttons
 buttons = []
-for i in range(len(button_list)):
-    for j in range(len(button_list[i])):
-        if button_list[i][j] != '':
-            buttons.append(Button([100*j + 50, 100*i + 150], button_list[i][j]))
+for i in range(len(main_button_list)):
+    for j in range(len(main_button_list[i])):
+        btn = Button([100*j + 50, 100*i + 150], main_button_list[i][j])
+        buttons.append(btn)
+
+buttons += extra_buttons  # Add the side buttons
 
 expression = ''
 result = ''
 
-# Hover detection state
+# Hover tracking
 hover_start_time = 0
 current_hover_button = None
 hover_duration_required = 1.8  # seconds
@@ -105,19 +120,19 @@ while True:
                                     result = 'Error'
                             else:
                                 expression += value
-                            hover_start_time = time.time() + 2  # Prevent double detection
+                            hover_start_time = time.time() + 2
                             current_hover_button = None
                 else:
                     current_hover_button = None
                     hover_start_time = 0
-
     else:
         current_hover_button = None
         hover_start_time = 0
 
-    # Display expression
-    cv2.rectangle(img, (50, 50), (550, 130), (255, 255, 255), cv2.FILLED)
-    cv2.rectangle(img, (50, 50), (550, 130), (50, 50, 50), 3)
+    # Expression Display Area
+    cv2.rectangle(img, (50, 50), (750, 130), (255, 255, 255), cv2.FILLED)
+    cv2.rectangle(img, (50, 50), (750, 130), (50, 50, 50), 3)
+
     cv2.putText(img, expression, (60, 90), cv2.FONT_HERSHEY_PLAIN,
                 3, (0, 0, 0), 3)
     cv2.putText(img, result, (60, 125), cv2.FONT_HERSHEY_PLAIN,
