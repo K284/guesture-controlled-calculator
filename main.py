@@ -8,7 +8,6 @@ mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 hands = mp_hands.Hands(max_num_hands=1)
 
-# Button Class
 class Button:
     def __init__(self, pos, text, size=[85, 85]):
         self.pos = pos
@@ -23,13 +22,12 @@ class Button:
         cv2.putText(img, self.text, (x+20, y+60),
                     cv2.FONT_HERSHEY_PLAIN, 2.5, (0, 0, 0), 3)
 
-    def check_click(self, x, y):
+    def check_inside(self, x, y):
         bx, by = self.pos
         bw, bh = self.size
         return bx < x < bx + bw and by < y < by + bh
 
-
-# Define button layout
+# Create buttons
 button_list = [
     ['7', '8', '9', '/'],
     ['4', '5', '6', '*'],
@@ -44,15 +42,14 @@ for i in range(len(button_list)):
         if button_list[i][j] != '':
             buttons.append(Button([100*j + 50, 100*i + 150], button_list[i][j]))
 
-# Calculator expression
 expression = ''
 result = ''
 
-# Cooldown timing
-last_click_time = 0
-click_delay = 1.2  # seconds
+# Hover detection state
+hover_start_time = 0
+current_hover_button = None
+hover_duration_required = 1.8  # seconds
 
-# Start camera
 cap = cv2.VideoCapture(0)
 cap.set(3, 1280)
 cap.set(4, 720)
@@ -63,7 +60,6 @@ while True:
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(img_rgb)
 
-    # Draw buttons
     for button in buttons:
         button.draw(img)
 
@@ -81,12 +77,19 @@ while True:
                 x, y = lmList[8]  # Index fingertip
                 cv2.circle(img, (x, y), 10, (0, 255, 0), cv2.FILLED)
 
-                current_time = time.time()
-                if current_time - last_click_time > click_delay:
-                    for button in buttons:
-                        if button.check_click(x, y):
-                            last_click_time = current_time
-                            value = button.text
+                hovered_button = None
+                for button in buttons:
+                    if button.check_inside(x, y):
+                        hovered_button = button
+                        break
+
+                if hovered_button:
+                    if current_hover_button != hovered_button:
+                        current_hover_button = hovered_button
+                        hover_start_time = time.time()
+                    else:
+                        if time.time() - hover_start_time >= hover_duration_required:
+                            value = hovered_button.text
                             if value == 'C':
                                 expression = ''
                                 result = ''
@@ -102,12 +105,19 @@ while True:
                                     result = 'Error'
                             else:
                                 expression += value
-                            break
+                            hover_start_time = time.time() + 2  # Prevent double detection
+                            current_hover_button = None
+                else:
+                    current_hover_button = None
+                    hover_start_time = 0
 
-    # Display current expression and result
+    else:
+        current_hover_button = None
+        hover_start_time = 0
+
+    # Display expression
     cv2.rectangle(img, (50, 50), (550, 130), (255, 255, 255), cv2.FILLED)
     cv2.rectangle(img, (50, 50), (550, 130), (50, 50, 50), 3)
-
     cv2.putText(img, expression, (60, 90), cv2.FONT_HERSHEY_PLAIN,
                 3, (0, 0, 0), 3)
     cv2.putText(img, result, (60, 125), cv2.FONT_HERSHEY_PLAIN,
